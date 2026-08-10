@@ -52,10 +52,10 @@ See ` + "`sk --help`" + ` for full usage; the commands are identical.`,
 }
 
 func dispatchCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:          "dispatch <slug-name> [args...]",
-		Short:        "Run the appropriate kubectl command for a slug",
-		Args:         cobra.MinimumNArgs(1),
+	c := &cobra.Command{
+		Use:   "dispatch <slug-name> [args...]",
+		Short: "Run the appropriate kubectl command for a slug",
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := loadConfig()
 			if err != nil {
@@ -65,6 +65,9 @@ func dispatchCmd() *cobra.Command {
 		},
 		SilenceUsage: true,
 	}
+	// Everything after the slug name belongs to kubectl, including flags.
+	c.Flags().SetInterspersed(false)
+	return c
 }
 
 func installCmd() *cobra.Command {

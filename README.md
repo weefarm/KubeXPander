@@ -21,6 +21,16 @@ each map to a Kubernetes namespace and dispatch to `kubectl` with the right
 Anything else is passed straight to `kubectl -n <ns>`, so `kclo delete pod foo`
 and `kclo get deploy` work exactly as you'd expect.
 
+Everything after the slug name belongs to `kubectl`, including flags — so
+`kclo delete pod foo --force --grace-period=0` and `kclo logs foo -f` work.
+The flip side is that sk's own flags (`--dry-run`, `--config`) must come
+*before* the slug name:
+
+```bash
+sk --dry-run dispatch clo delete pod foo --force   # sk flag first: works
+sk dispatch clo delete pod foo --dry-run           # --dry-run goes to kubectl
+```
+
 ### Built-in cluster-scoped getters: `kgn` and `kns`
 
 Two cluster-scoped shortcuts ship built-in (no namespace, no config entry

@@ -366,9 +366,60 @@ func TestDispatchFilteredRfNotFiltered(t *testing.T) {
 	}
 }
 
+func TestDispatchRfRejectsGlobbedFiles(t *testing.T) {
+	cfg := testConfig()
+	// Create a temp directory with files that look like shell-globbed arguments.
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+	if err := os.WriteFile("slugs.sh", []byte("test"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+	if err := os.WriteFile("slugs.yaml", []byte("test"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	err := Dispatch(cfg, "clo", []string{"rmf", "slugs.sh", "slugs.yaml"}, Options{DryRun: true})
+	if err == nil {
+		t.Fatal("expected error for rmf with globbed filenames, got nil")
+	}
+	if !strings.Contains(err.Error(), "local file") {
+		t.Errorf("expected 'local file' error, got %q", err.Error())
+	}
+}
+
+func TestDispatchRfAll(t *testing.T) {
+	cfg := testConfig()
+	restore := captureStdout(t)
+	err := Dispatch(cfg, "clo", []string{"rmf", "--all"}, Options{DryRun: true})
+	out := restore()
+	if err != nil {
+		t.Fatalf("Dispatch failed: %v", err)
+	}
+	// In dry-run we expect one scan command per resource type.
+	for _, rtype := range finTypesNS {
+		expected := "kubectl get " + rtype + " -n cloudflare"
+		if !strings.Contains(out, expected) {
+			t.Errorf("expected scan command for %s, got %q", rtype, out)
+		}
+	}
+}
+
+func TestDispatchRfLiteralStar(t *testing.T) {
+	cfg := testConfig()
+	restore := captureStdout(t)
+	err := Dispatch(cfg, "clo", []string{"rmf", "*"}, Options{DryRun: true})
+	out := restore()
+	if err != nil {
+		t.Fatalf("Dispatch failed: %v", err)
+	}
+	if !strings.Contains(out, "kubectl get pods -n cloudflare") {
+		t.Errorf("expected scan for pods, got %q", out)
+	}
+}
+
 func TestConfirmRmfDryRunSkipsPrompt(t *testing.T) {
 	// In DryRun mode, confirmRmf should return true without prompting.
-	got := confirmRmf("cloudflare", []string{"deployment", "foo"}, Options{DryRun: true})
+	got := confirmRmf("deployment foo", "cloudflare", Options{DryRun: true})
 	if !got {
 		t.Error("confirmRmf should return true in DryRun mode")
 	}
@@ -383,7 +434,7 @@ func TestConfirmRmfYes(t *testing.T) {
 	os.Stdin = r
 	defer func() { os.Stdin = old }()
 
-	got := confirmRmf("cloudflare", []string{"deployment", "foo"}, Options{DryRun: false})
+	got := confirmRmf("deployment foo", "cloudflare", Options{DryRun: false})
 	if !got {
 		t.Error("confirmRmf should return true for 'y'")
 	}
@@ -398,7 +449,7 @@ func TestConfirmRmfNo(t *testing.T) {
 	os.Stdin = r
 	defer func() { os.Stdin = old }()
 
-	got := confirmRmf("cloudflare", []string{"deployment", "foo"}, Options{DryRun: false})
+	got := confirmRmf("deployment foo", "cloudflare", Options{DryRun: false})
 	if got {
 		t.Error("confirmRmf should return false for 'n'")
 	}
@@ -413,7 +464,7 @@ func TestConfirmRmfEmptyCancel(t *testing.T) {
 	os.Stdin = r
 	defer func() { os.Stdin = old }()
 
-	got := confirmRmf("cloudflare", []string{"deployment", "foo"}, Options{DryRun: false})
+	got := confirmRmf("deployment foo", "cloudflare", Options{DryRun: false})
 	if got {
 		t.Error("confirmRmf should return false for empty input")
 	}

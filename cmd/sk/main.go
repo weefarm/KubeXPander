@@ -77,7 +77,7 @@ Anything else is passed through to kubectl -n <ns>.`,
 
 // dispatchCmd implements `sk dispatch <name> [args...]`.
 func dispatchCmd() *cobra.Command {
-	return &cobra.Command{
+	c := &cobra.Command{
 		Use:   "dispatch <slug-name> [args...]",
 		Short: "Run the appropriate kubectl command for a slug",
 		Long: `Resolves <slug-name> against the config and dispatches the args.
@@ -106,6 +106,11 @@ Examples:
 		},
 		SilenceUsage: true,
 	}
+	// Everything after the slug name belongs to kubectl, including flags
+	// (`kclo delete pod foo --force`). Stop flag parsing at the slug name so
+	// sk's own flags must precede it and kubectl flags pass through untouched.
+	c.Flags().SetInterspersed(false)
+	return c
 }
 
 // installCmd implements `sk install` — emits the shell snippet.

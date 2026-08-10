@@ -223,11 +223,11 @@ func listFinalizersAll(opts Options) error {
 // confirmRmf prompts the user for confirmation before stripping finalizers.
 // Returns true if the user typed "y" or "yes", false otherwise.
 // Skipped in DryRun mode (tests and preview).
-func confirmRmf(ns string, args []string, opts Options) bool {
+func confirmRmf(target, ns string, opts Options) bool {
 	if opts.DryRun {
 		return true
 	}
-	fmt.Printf("Are you sure you want to remove finalizers from %s in namespace %s? [y/N] ", strings.Join(args, " "), ns)
+	fmt.Printf("Are you sure you want to remove finalizers from %s in namespace %s? [y/N] ", target, ns)
 	reader := bufio.NewReader(os.Stdin)
 	resp, err := reader.ReadString('\n')
 	if err != nil {
@@ -239,6 +239,7 @@ func confirmRmf(ns string, args []string, opts Options) bool {
 
 // stripFinalizersNS patches finalizers to null on one or more resources.
 //
+//	sk dispatch clo rmf --all                    -> patch all resources with finalizers
 //	sk dispatch clo rmf deployment foo           -> patch deployment/foo
 //	sk dispatch clo rmf deployment foo bar baz  -> patch each name
 //	sk dispatch clo rmf deployment/foo          -> single type/name form
@@ -247,28 +248,42 @@ func confirmRmf(ns string, args []string, opts Options) bool {
 // "yes" to proceed; anything else cancels. The prompt is skipped in DryRun mode.
 func stripFinalizersNS(caller, ns string, args []string, opts Options) error {
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "Usage: %s rmf <type> <name> [name...]  |  %s rmf <type/name>\n", caller, caller)
+		fmt.Fprintf(os.Stderr, "Usage: %s rmf --all | %s rmf <type> <name> [name...] | %s rmf <type/name>\n", caller, caller, caller)
 		return fmt.Errorf("rmf: missing arguments")
 	}
 
-	if !confirmRmf(ns, args, opts) {
-		fmt.Fprintln(os.Stderr, "rmf: cancelled.")
-		return fmt.Errorf("rmf: cancelled by user")
+	// --all or a literal wildcard means every resource with finalizers in the namespace.
+	if len(args) == 1 && (args[0] == "--all" || args[0] == "*") {
+		return stripFinalizersAllNS(ns, opts)
+	}
+
+	// Reject arguments that are local files; this usually means the user ran
+	// `rmf *` and the shell expanded the star into filenames.
+	if err := validateRmfArgs(args); err != nil {
+		return err
 	}
 
 	// type/name single-arg form.
 	if len(args) == 1 && strings.Contains(args[0], "/") {
+		if !confirmRmf(args[0], ns, opts) {
+			fmt.Fprintln(os.Stderr, "rmf: cancelled.")
+			return fmt.Errorf("rmf: cancelled by user")
+		}
 		patch := []byte(`{"metadata":{"finalizers":null}}`)
 		return runKubectlPatch(args[0], ns, patch, opts)
 	}
 
 	if len(args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: %s rmf <type> <name> [name...]\n", caller)
+		fmt.Fprintf(os.Stderr, "Usage: %s rmf <type> <name> [name...] | %s rmf <type/name>\n", caller, caller)
 		return fmt.Errorf("rmf: need at least <type> and <name>")
 	}
 
 	rtype := args[0]
 	names := args[1:]
+	if !confirmRmf(rtype+" "+strings.Join(names, " "), ns, opts) {
+		fmt.Fprintln(os.Stderr, "rmf: cancelled.")
+		return fmt.Errorf("rmf: cancelled by user")
+	}
 	patch := []byte(`{"metadata":{"finalizers":null}}`)
 	for _, name := range names {
 		if err := runKubectlPatchType(rtype, name, ns, patch, opts); err != nil {
@@ -276,6 +291,67 @@ func stripFinalizersNS(caller, ns string, args []string, opts Options) error {
 		}
 	}
 	return nil
+}
+
+// validateRmfArgs rejects arguments that look like shell-globbed filenames.
+// If the user runs `rmf *` in a directory with files, bash expands the star
+// into filenames before sk sees the command; this catches that mistake.
+func validateRmfArgs(args []string) error {
+	for _, a := range args {
+		if _, err := os.Stat(a); err == nil {
+			return fmt.Errorf("rmf: argument %q looks like a local file; did you mean 'rmf --all' or forget to quote a wildcard?", a)
+		}
+	}
+	return nil
+}
+
+// stripFinalizersAllNS patches finalizers to null on every resource in the
+// namespace that currently has finalizers set. It scans the resource types in
+// finTypesNS and prompts for confirmation once before dispatching patches.
+func stripFinalizersAllNS(ns string, opts Options) error {
+	if !confirmRmf("all resources with finalizers", ns, opts) {
+		fmt.Fprintln(os.Stderr, "rmf: cancelled.")
+		return fmt.Errorf("rmf: cancelled by user")
+	}
+
+	patch := []byte(`{"metadata":{"finalizers":null}}`)
+	for _, rtype := range finTypesNS {
+		names, err := finalizerResourceNames(rtype, ns, opts)
+		if err != nil {
+			// Resource type may not exist in this cluster; skip it.
+			continue
+		}
+		for _, name := range names {
+			if err := runKubectlPatchType(rtype, name, ns, patch, opts); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// finalizerResourceNames returns the names of resources of the given type in
+// the namespace that have at least one finalizer set. In DryRun mode it prints
+// the kubectl command that would be used and returns an empty list, because
+// the real cluster state is not available.
+func finalizerResourceNames(rtype, ns string, opts Options) ([]string, error) {
+	jsonpath := `{range .items[?(@.metadata.finalizers)]}{.metadata.name}{"\n"}{end}`
+	args := []string{"get", rtype, "-n", ns, "-o", jsonpath}
+	if opts.DryRun {
+		fmt.Printf("kubectl %s\n", strings.Join(args, " "))
+		return nil, nil
+	}
+	out, err := runKubectlOutput(args, opts)
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if name := strings.TrimSpace(line); name != "" {
+			names = append(names, name)
+		}
+	}
+	return names, nil
 }
 
 // --- kubectl runners ---
@@ -291,6 +367,19 @@ func runKubectl(args []string, opts Options) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	return cmd.Run()
+}
+
+// runKubectlOutput executes kubectl and captures stdout. Used for operations
+// that need to inspect the returned data before dispatching further commands.
+// In DryRun mode it prints the command and returns empty output.
+func runKubectlOutput(args []string, opts Options) ([]byte, error) {
+	if opts.DryRun {
+		fmt.Printf("kubectl %s\n", strings.Join(args, " "))
+		return nil, nil
+	}
+	cmd := exec.Command("kubectl", args...)
+	cmd.Stderr = os.Stderr
+	return cmd.Output()
 }
 
 // runKubectlSilent runs kubectl with stdout to the terminal but stderr suppressed.
