@@ -52,7 +52,7 @@ func runDispatch(t *testing.T, args ...string) (string, error) {
 }
 
 // kubectl flags after the slug name must reach kubectl instead of being
-// parsed as sk flags (regression: `kclo delete pod foo --force` failed with
+// parsed as kxp flags (regression: `kclo delete pod foo --force` failed with
 // "unknown flag: --force").
 func TestDispatchPassesKubectlFlagsThrough(t *testing.T) {
 	cases := []struct {

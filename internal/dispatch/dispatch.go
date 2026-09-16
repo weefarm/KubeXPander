@@ -1,14 +1,14 @@
-// Package dispatch implements the sk verb dispatcher.
+// Package dispatch implements the kxp verb dispatcher.
 //
 // The dispatch contract mirrors the bash v0 reference:
 //
-//	sk dispatch <slug>               -> kubectl get pods -n <ns>
-//	sk dispatch <slug> o             -> kubectl get pods -n <ns> -o wide
-//	sk dispatch <slug> o yaml        -> kubectl get pods -n <ns> -o yaml
-//	sk dispatch <slug> lsf            -> list resources with finalizers in <ns>
-//	sk dispatch <slug> rmf <type> <name> [name...]  -> strip finalizers
-//	sk dispatch <slug> rmf <type/name>              -> strip finalizers (single-arg form)
-//	sk dispatch <slug> <anything else>             -> kubectl -n <ns> <anything else>
+//	kxp dispatch <slug>               -> kubectl get pods -n <ns>
+//	kxp dispatch <slug> o             -> kubectl get pods -n <ns> -o wide
+//	kxp dispatch <slug> o yaml        -> kubectl get pods -n <ns> -o yaml
+//	kxp dispatch <slug> lsf            -> list resources with finalizers in <ns>
+//	kxp dispatch <slug> rmf <type> <name> [name...]  -> strip finalizers
+//	kxp dispatch <slug> rmf <type/name>              -> strip finalizers (single-arg form)
+//	kxp dispatch <slug> <anything else>             -> kubectl -n <ns> <anything else>
 //
 // For filtered slugs (kcil/kenv style), the default listing and its -o
 // variant are piped through grep; everything else passes through unfiltered.
@@ -17,8 +17,8 @@
 // `rmf` — patching across namespaces is too easy to misfire.
 //
 // Users typically invoke the generated shell functions (kclo, ksys, ...),
-// but may also use `skd <slug>` if they install the optional `skd` alias
-// (`alias skd="sk dispatch"`), which the install command emits.
+// but may also use `kxpd <slug>` if they install the optional `kxpd` alias
+// (`alias kxpd="kxp dispatch"`), which the install command emits.
 package dispatch
 
 import (
@@ -28,7 +28,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/weefarm/38specialK/internal/config"
+	"github.com/weefarm/KubeXPander/internal/config"
 )
 
 // finTypesNS is the curated list of namespaced resource types scanned by lsf.
@@ -155,7 +155,7 @@ func dispatchAll(args []string, opts Options) error {
 
 	case "rmf":
 		fmt.Fprintln(os.Stderr, "rmf is intentionally not supported on the all-namespaces slug.")
-		fmt.Fprintln(os.Stderr, "Use a namespace-scoped slug instead (e.g. sk dispatch clo rmf deployment foo).")
+		fmt.Fprintln(os.Stderr, "Use a namespace-scoped slug instead (e.g. kxp dispatch clo rmf deployment foo).")
 		return fmt.Errorf("rmf on all-namespaces is unsafe")
 
 	default:
@@ -165,10 +165,10 @@ func dispatchAll(args []string, opts Options) error {
 
 // dispatchClusterGet handles built-in cluster-scoped getters (kgn, kns).
 //
-//	sk dispatch gn             -> kubectl get nodes
-//	sk dispatch gn o           -> kubectl get nodes -o wide
-//	sk dispatch gn o yaml      -> kubectl get nodes -o yaml
-//	sk dispatch gn label node foo key=value  -> kubectl label node foo key=value (pass-through)
+//	kxp dispatch gn             -> kubectl get nodes
+//	kxp dispatch gn o           -> kubectl get nodes -o wide
+//	kxp dispatch gn o yaml      -> kubectl get nodes -o yaml
+//	kxp dispatch gn label node foo key=value  -> kubectl label node foo key=value (pass-through)
 //
 // The `o` verb is handled like namespace slugs; everything else is passed
 // straight to kubectl without a `get <resource>` prefix, so non-get commands
@@ -239,10 +239,10 @@ func confirmRmf(target, ns string, opts Options) bool {
 
 // stripFinalizersNS patches finalizers to null on one or more resources.
 //
-//	sk dispatch clo rmf --all                    -> patch all resources with finalizers
-//	sk dispatch clo rmf deployment foo           -> patch deployment/foo
-//	sk dispatch clo rmf deployment foo bar baz  -> patch each name
-//	sk dispatch clo rmf deployment/foo          -> single type/name form
+//	kxp dispatch clo rmf --all                    -> patch all resources with finalizers
+//	kxp dispatch clo rmf deployment foo           -> patch deployment/foo
+//	kxp dispatch clo rmf deployment foo bar baz  -> patch each name
+//	kxp dispatch clo rmf deployment/foo          -> single type/name form
 //
 // A confirmation prompt gates the actual dispatch — the user must type "y" or
 // "yes" to proceed; anything else cancels. The prompt is skipped in DryRun mode.
@@ -295,7 +295,7 @@ func stripFinalizersNS(caller, ns string, args []string, opts Options) error {
 
 // validateRmfArgs rejects arguments that look like shell-globbed filenames.
 // If the user runs `rmf *` in a directory with files, bash expands the star
-// into filenames before sk sees the command; this catches that mistake.
+// into filenames before kxp sees the command; this catches that mistake.
 func validateRmfArgs(args []string) error {
 	for _, a := range args {
 		if _, err := os.Stat(a); err == nil {

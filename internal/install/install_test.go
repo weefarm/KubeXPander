@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/weefarm/38specialK/internal/config"
+	"github.com/weefarm/KubeXPander/internal/config"
 )
 
 func TestEmitBasicStructure(t *testing.T) {
@@ -29,21 +29,21 @@ func TestEmitBasicStructure(t *testing.T) {
 		t.Error("expected header with 'auto-generated'")
 	}
 
-	// Should contain the skd alias
-	if !strings.Contains(out, `alias skd="sk dispatch"`) {
-		t.Error("expected skd alias in output")
+	// Should contain the kxpd alias
+	if !strings.Contains(out, `alias kxpd="kxp dispatch"`) {
+		t.Error("expected kxpd alias in output")
 	}
 
 	// Should contain the all-namespaces function
-	if !strings.Contains(out, "kall(){ sk dispatch all \"$@\"; }") {
+	if !strings.Contains(out, "kall(){ kxp dispatch all \"$@\"; }") {
 		t.Error("expected kall function in output")
 	}
 
 	// Should contain plain slug functions
-	if !strings.Contains(out, "kclo(){ sk dispatch clo \"$@\"; }") {
+	if !strings.Contains(out, "kclo(){ kxp dispatch clo \"$@\"; }") {
 		t.Error("expected kclo function in output")
 	}
-	if !strings.Contains(out, "ksys(){ sk dispatch sys \"$@\"; }") {
+	if !strings.Contains(out, "ksys(){ kxp dispatch sys \"$@\"; }") {
 		t.Error("expected ksys function in output")
 	}
 }
@@ -61,7 +61,7 @@ func TestEmitFilteredSlugs(t *testing.T) {
 	}
 	out := buf.String()
 
-	if !strings.Contains(out, "kcil(){ sk dispatch cil \"$@\"; }") {
+	if !strings.Contains(out, "kcil(){ kxp dispatch cil \"$@\"; }") {
 		t.Error("expected kcil function in output")
 	}
 }
@@ -97,15 +97,15 @@ func TestEmitCompletion(t *testing.T) {
 	out := buf.String()
 
 	// Should contain the completion function
-	if !strings.Contains(out, "_sk_dispatch_complete") {
+	if !strings.Contains(out, "_kxp_dispatch_complete") {
 		t.Error("expected completion function in output")
 	}
 
 	// Should register completion for each slug function + all
-	if !strings.Contains(out, "complete -F _sk_dispatch_complete kclo") {
+	if !strings.Contains(out, "complete -F _kxp_dispatch_complete kclo") {
 		t.Error("expected completion registration for kclo")
 	}
-	if !strings.Contains(out, "complete -F _sk_dispatch_complete kall") {
+	if !strings.Contains(out, "complete -F _kxp_dispatch_complete kall") {
 		t.Error("expected completion registration for kall")
 	}
 }
@@ -119,18 +119,18 @@ func TestEmitClusterGetBuiltins(t *testing.T) {
 	out := buf.String()
 
 	// Should emit kgn and kns functions
-	if !strings.Contains(out, "kgn(){ sk dispatch gn \"$@\"; }") {
+	if !strings.Contains(out, "kgn(){ kxp dispatch gn \"$@\"; }") {
 		t.Error("expected kgn function in output")
 	}
-	if !strings.Contains(out, "kns(){ sk dispatch ns \"$@\"; }") {
+	if !strings.Contains(out, "kns(){ kxp dispatch ns \"$@\"; }") {
 		t.Error("expected kns function in output")
 	}
 
 	// Should register completions for kgn and kns
-	if !strings.Contains(out, "complete -F _sk_dispatch_complete kgn") {
+	if !strings.Contains(out, "complete -F _kxp_dispatch_complete kgn") {
 		t.Error("expected completion registration for kgn")
 	}
-	if !strings.Contains(out, "complete -F _sk_dispatch_complete kns") {
+	if !strings.Contains(out, "complete -F _kxp_dispatch_complete kns") {
 		t.Error("expected completion registration for kns")
 	}
 }
@@ -199,7 +199,7 @@ func TestEmitCustomAllSlug(t *testing.T) {
 	}
 	out := buf.String()
 
-	if !strings.Contains(out, "kcluster(){ sk dispatch cluster \"$@\"; }") {
+	if !strings.Contains(out, "kcluster(){ kxp dispatch cluster \"$@\"; }") {
 		t.Error("expected kcluster function with custom AllSlug")
 	}
 }
@@ -212,14 +212,14 @@ func TestEmitEmptyConfig(t *testing.T) {
 	}
 	out := buf.String()
 
-	// Should still have header, skd alias, kall, lsf guard, and completion
+	// Should still have header, kxpd alias, kall, lsf guard, and completion
 	if !strings.Contains(out, "auto-generated") {
 		t.Error("expected header even with empty config")
 	}
-	if !strings.Contains(out, `alias skd="sk dispatch"`) {
-		t.Error("expected skd alias even with empty config")
+	if !strings.Contains(out, `alias kxpd="kxp dispatch"`) {
+		t.Error("expected kxpd alias even with empty config")
 	}
-	if !strings.Contains(out, "kall(){ sk dispatch all \"$@\"; }") {
+	if !strings.Contains(out, "kall(){ kxp dispatch all \"$@\"; }") {
 		t.Error("expected kall function even with empty config")
 	}
 }
@@ -281,7 +281,7 @@ func TestEmitValidBashSyntax(t *testing.T) {
 }
 
 // TestEmitValidBashSyntaxEmptyConfig verifies the snippet is valid bash even
-// with an empty config (no slugs, just the header, skd alias, kall, lsf
+// with an empty config (no slugs, just the header, kxpd alias, kall, lsf
 // guard, and completion block).
 func TestEmitValidBashSyntaxEmptyConfig(t *testing.T) {
 	if _, err := exec.LookPath("bash"); err != nil {
@@ -307,7 +307,7 @@ func TestEmitValidBashSyntaxEmptyConfig(t *testing.T) {
 }
 
 // TestInitInstallFlow is an end-to-end test of the full install process:
-// WriteExample (sk init) → Load → Emit (sk install) → bash -n. This is the
+// WriteExample (kxp init) → Load → Emit (kxp install) → bash -n. This is the
 // exact sequence a user follows, and it verifies that the config written by
 // init is loadable by install, and that the resulting shell snippet is valid
 // bash. Regression guard for the install flow issues reported in #5.
@@ -316,11 +316,11 @@ func TestInitInstallFlow(t *testing.T) {
 		t.Skip("bash not available in test environment")
 	}
 
-	// Step 1: sk init — write a starter config to a temp dir
+	// Step 1: kxp init — write a starter config to a temp dir
 	dir := t.TempDir()
-	cfgPath := filepath.Join(dir, ".config", "sk", "slugs.yaml")
+	cfgPath := filepath.Join(dir, ".config", "kxp", "slugs.yaml")
 	if err := config.WriteExample(cfgPath, false); err != nil {
-		t.Fatalf("WriteExample (sk init) failed: %v", err)
+		t.Fatalf("WriteExample (kxp init) failed: %v", err)
 	}
 
 	// Step 2: verify the config file has correct permissions (regression
@@ -333,15 +333,15 @@ func TestInitInstallFlow(t *testing.T) {
 		t.Errorf("config file mode: expected 0o644, got 0o%o", mode)
 	}
 
-	// Step 3: sk install — load the config and emit the shell snippet
+	// Step 3: kxp install — load the config and emit the shell snippet
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
-		t.Fatalf("Load (sk install config read) failed: %v", err)
+		t.Fatalf("Load (kxp install config read) failed: %v", err)
 	}
 
 	var buf strings.Builder
 	if err := Emit(cfg, &buf); err != nil {
-		t.Fatalf("Emit (sk install) failed: %v", err)
+		t.Fatalf("Emit (kxp install) failed: %v", err)
 	}
 	out := buf.String()
 
@@ -358,10 +358,10 @@ func TestInitInstallFlow(t *testing.T) {
 	// Step 5: verify the snippet contains functions for the example slugs
 	// (confirms the config round-tripped correctly through the full flow)
 	expectedFunctions := []string{
-		"kall(){ sk dispatch all \"$@\"; }",
-		"kclo(){ sk dispatch clo \"$@\"; }",
-		"ksys(){ sk dispatch sys \"$@\"; }",
-		`alias skd="sk dispatch"`,
+		"kall(){ kxp dispatch all \"$@\"; }",
+		"kclo(){ kxp dispatch clo \"$@\"; }",
+		"ksys(){ kxp dispatch sys \"$@\"; }",
+		`alias kxpd="kxp dispatch"`,
 	}
 	for _, fn := range expectedFunctions {
 		if !strings.Contains(out, fn) {

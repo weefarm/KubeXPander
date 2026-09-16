@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/weefarm/38specialK/internal/config"
+	"github.com/weefarm/KubeXPander/internal/config"
 )
 
 // captureStdout temporarily redirects os.Stdout to capture DryRun output.

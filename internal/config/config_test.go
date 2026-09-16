@@ -425,20 +425,20 @@ func TestDefaultPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DefaultPath failed: %v", err)
 	}
-	if path != "/tmp/xdg-test/sk/slugs.yaml" {
-		t.Errorf("expected /tmp/xdg-test/sk/slugs.yaml, got %q", path)
+	if path != "/tmp/xdg-test/kxp/slugs.yaml" {
+		t.Errorf("expected /tmp/xdg-test/kxp/slugs.yaml, got %q", path)
 	}
 }
 
 func TestDefaultPathFallback(t *testing.T) {
-	// Without XDG_CONFIG_HOME — should fall back to ~/.config/sk/slugs.yaml
+	// Without XDG_CONFIG_HOME — should fall back to ~/.config/kxp/slugs.yaml
 	t.Setenv("XDG_CONFIG_HOME", "")
 	path, err := DefaultPath()
 	if err != nil {
 		t.Fatalf("DefaultPath failed: %v", err)
 	}
 	home, _ := os.UserHomeDir()
-	expected := filepath.Join(home, ".config", "sk", "slugs.yaml")
+	expected := filepath.Join(home, ".config", "kxp", "slugs.yaml")
 	if path != expected {
 		t.Errorf("expected %q, got %q", expected, path)
 	}
@@ -473,7 +473,7 @@ func TestWriteExampleFilePermissions(t *testing.T) {
 // inside it even if the file itself has correct permissions.
 func TestWriteExampleDirPermissions(t *testing.T) {
 	dir := t.TempDir()
-	subdir := filepath.Join(dir, "nested", "config", "sk")
+	subdir := filepath.Join(dir, "nested", "config", "kxp")
 	path := filepath.Join(subdir, "slugs.yaml")
 
 	if err := WriteExample(path, false); err != nil {

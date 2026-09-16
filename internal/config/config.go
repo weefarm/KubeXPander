@@ -1,6 +1,6 @@
 // Package config loads and validates the user's slug map.
 //
-// The config file lives at ~/.config/sk/slugs.yaml by default and maps
+// The config file lives at ~/.config/kxp/slugs.yaml by default and maps
 // short names (3-8 chars) to Kubernetes namespaces, plus optional "filtered"
 // slugs that grep the default pod listing (the kcil/kenv pattern).
 //
@@ -21,8 +21,8 @@ import (
 )
 
 // SlugNameRange is the default allowed length range for slug names.
-// The name "38specialK" nods to this: 3-8 chars is the sweet spot — short
-// enough to type fast, long enough to be memorable and unique.
+// 3-8 chars is the sweet spot — short enough to type fast, long enough
+// to be memorable and unique.
 const (
 	SlugNameMin = 3
 	SlugNameMax = 8
@@ -64,16 +64,16 @@ type Config struct {
 }
 
 // DefaultPath returns the default config file location:
-// $XDG_CONFIG_HOME/sk/slugs.yaml, falling back to ~/.config/sk/slugs.yaml.
+// $XDG_CONFIG_HOME/kxp/slugs.yaml, falling back to ~/.config/kxp/slugs.yaml.
 func DefaultPath() (string, error) {
 	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		return filepath.Join(xdg, "sk", "slugs.yaml"), nil
+		return filepath.Join(xdg, "kxp", "slugs.yaml"), nil
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("find home dir: %w", err)
 	}
-	return filepath.Join(home, ".config", "sk", "slugs.yaml"), nil
+	return filepath.Join(home, ".config", "kxp", "slugs.yaml"), nil
 }
 
 // Load reads and parses the config file at path.
@@ -239,7 +239,7 @@ func WriteExample(path string, force bool) error {
 	if err != nil {
 		return fmt.Errorf("marshal example config: %w", err)
 	}
-	header := []byte("# 38specialK slugs config — edit to match your namespaces.\n" +
+	header := []byte("# KubeXPander slugs config — edit to match your namespaces.\n" +
 		"# Slug names must be 3-8 chars (lowercase alphanumeric, leading letter).\n" +
 		"# Set allowShorter/allowLonger: true to override the length checks.\n" +
 		"#\n" +
@@ -249,6 +249,6 @@ func WriteExample(path string, force bool) error {
 		return fmt.Errorf("write config %s: %w", path, err)
 	}
 	fmt.Printf("wrote starter config to %s\n", path)
-	fmt.Printf("edit it, then run: sk install >> ~/.bashrc\n")
+	fmt.Printf("edit it, then run: kxp install >> ~/.bashrc\n")
 	return nil
 }

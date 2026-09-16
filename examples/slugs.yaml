@@ -1,5 +1,5 @@
-# 38specialK slugs config — reference example.
-# Copy to ~/.config/sk/slugs.yaml and edit to match your namespaces.
+# KubeXPander slugs config — reference example.
+# Copy to ~/.config/kxp/slugs.yaml and edit to match your namespaces.
 #
 # Slug names must be 3-8 chars (lowercase alphanumeric, leading letter).
 # Set allowShorter/allowLonger: true to override the length checks.

@@ -1,4 +1,4 @@
-module github.com/weefarm/38specialK
+module github.com/weefarm/KubeXPander
 
 go 1.25.0
 

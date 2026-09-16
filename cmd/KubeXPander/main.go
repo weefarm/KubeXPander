@@ -1,15 +1,15 @@
-// Command 38specialK is the canonical binary name; sk and 38sk are symlinks
-// (or copies) of it. Running it is identical to running sk.
+// Command KubeXPander is the canonical binary name; kxp is a symlink
+// (or copy) of it. Running it is identical to running kxp.
 //
 // Most users invoke the generated shell slugs (kclo, ksys, ...) which
-// call back into `sk dispatch`. The long binary name is for `install`,
+// call back into `kxp dispatch`. The long binary name is for `install`,
 // `init`, `help`, and other rare commands where the short name isn't worth
 // a symlink.
 //
-// The name "38specialK" riffs on the default 3-8 character length range for
-// slug names.
+// The name "KubeXPander" describes what it does: expands a short slug
+// into the full kubectl invocation.
 //
-// See the package doc for sk (cmd/sk) for full usage; the commands are
+// See the package doc for kxp (cmd/kxp) for full usage; the commands are
 // identical.
 package main
 
@@ -18,9 +18,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/weefarm/38specialK/internal/config"
-	"github.com/weefarm/38specialK/internal/dispatch"
-	"github.com/weefarm/38specialK/internal/install"
+	"github.com/weefarm/KubeXPander/internal/config"
+	"github.com/weefarm/KubeXPander/internal/dispatch"
+	"github.com/weefarm/KubeXPander/internal/install"
 )
 
 var (
@@ -30,18 +30,18 @@ var (
 
 func main() {
 	root := &cobra.Command{
-		Use:   "38specialK",
-		Short: "38specialK — Kubernetes namespace slugs with finalizer ops",
-		Long: `38specialK reduces wasted keystrokes interacting with Kubernetes.
+		Use:   "KubeXPander",
+		Short: "KubeXPander — Kubernetes namespace slugs with finalizer ops",
+		Long: `KubeXPander reduces wasted keystrokes interacting with Kubernetes.
 
-This is the canonical binary; ` + "`sk`" + ` and ` + "`38sk`" + ` are symlinks to it.
+This is the canonical binary; ` + "`kxp`" + ` is a symlink to it.
 Most users invoke the generated shell slugs (kclo, ksys, ...) which
-call back into ` + "`sk dispatch`" + `.
+call back into ` + "`kxp dispatch`" + `.
 
-See ` + "`sk --help`" + ` for full usage; the commands are identical.`,
+See ` + "`kxp --help`" + ` for full usage; the commands are identical.`,
 	}
 
-	root.PersistentFlags().StringVarP(&cfgPath, "config", "c", "", "path to slugs.yaml (default: ~/.config/sk/slugs.yaml)")
+	root.PersistentFlags().StringVarP(&cfgPath, "config", "c", "", "path to slugs.yaml (default: ~/.config/kxp/slugs.yaml)")
 	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "print the kubectl command instead of running it")
 
 	root.AddCommand(dispatchCmd(), installCmd(), initCmd(), listCmd())

@@ -1,9 +1,9 @@
-# bash/sk.sh — v0 reference implementation of 38specialK in pure bash.
+# bash/kxp.sh — v0 reference implementation of KubeXPander in pure bash.
 #
 # This is the original prototype the Go binary replaces. It works without
-# compiling anything — just `source bash/sk.sh` from your ~/.bashrc.
-# The Go binary (`sk install`) generates a thinner version of this that
-# delegates back to `sk dispatch` for all the smarts.
+# compiling anything — just `source bash/kxp.sh` from your ~/.bashrc.
+# The Go binary (`kxp install`) generates a thinner version of this that
+# delegates back to `kxp dispatch` for all the smarts.
 #
 # Terminology: a "slug" is a short namespace alias. `kclo` dispatches to the
 # `cloudflare` namespace — `k` is the prefix, `clo` is the slug.
